@@ -49,6 +49,10 @@ function createServiceMock(name, subtype) {
             char._value = value;
             return this;
         },
+        setPrimaryService(value) {
+            this._isPrimaryService = value;
+            return this;
+        },
         addOptionalCharacteristic(type) {
             this._optionalCharacteristics.push(type);
             return this;

@@ -9,6 +9,7 @@ import assert from 'node:assert';
 
 // Import DeviceAta implementation
 import DeviceAta from '../src/deviceata/index.js';
+import { AirConditioner } from '../src/constants.js';
 
 import { createMockApi } from './mocks/homebridge-api.js';
 import { MelCloudMock } from './mocks/melcloudata-mock.js';
@@ -107,6 +108,30 @@ describe('DeviceAta Integration Tests', () => {
 
             assert.strictEqual(state.power, false);
             assert.strictEqual(state.currentOperationMode, 0); // INACTIVE
+        });
+    });
+
+    describe('Mode control', () => {
+        test('maps HomeKit Cool to MELCloud Cool when legacy mode config is omitted', async () => {
+            const { heatDryFanMode, coolDryFanMode, autoDryFanMode, ...deviceConfig } = sampleDeviceConfig;
+            const { device } = createDevice(deviceConfig);
+            const sentCommands = [];
+
+            device.deviceData = structuredClone(sampleDeviceData);
+            device.accessoryState = device.stateParser.parse(device.deviceData);
+            device.melCloudAta = {
+                send: async (accountType, displayType, deviceData, flag) => {
+                    sentCommands.push({ accountType, displayType, deviceData, flag });
+                }
+            };
+
+            await device.prepareAccessory();
+            const targetState = device.services.main.getCharacteristic(device.Characteristic.TargetHeaterCoolerState);
+
+            await targetState._setHandler(device.Characteristic.TargetHeaterCoolerState.COOL);
+
+            assert.strictEqual(device.deviceData.Device.OperationMode, 3);
+            assert.strictEqual(sentCommands.at(-1).flag, AirConditioner.EffectiveFlags.OperationMode);
         });
     });
 

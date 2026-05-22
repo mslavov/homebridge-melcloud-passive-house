@@ -8,6 +8,7 @@ import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { SetpointCalculator } from '../src/deviceata/predictive/setpoint-calculator.js';
 import { StateMachine } from '../src/deviceata/predictive/state-machine.js';
+import { PredictiveController } from '../src/deviceata/predictive/index.js';
 import { States, SeasonMode, AntiOscillation, PredictiveDefaults } from '../src/deviceata/predictive/constants.js';
 
 // Create a minimal device context for testing
@@ -20,7 +21,7 @@ function createMockDevice(overrides = {}) {
         logInfo: false,
         logWarn: false,
         accessoryState: {
-            targetHeaterCoolerState: 1 // HEAT
+            targetOperationMode: 1 // HEAT
         },
         emit: () => {},
         ...overrides
@@ -405,6 +406,29 @@ describe('SetpointCalculator', () => {
             // With cold boost of 3 + outdoor reset + error correction, should be > 2
             assert.ok(deviation >= 0); // At minimum, should not be clamped down
         });
+    });
+});
+
+describe('PredictiveController', () => {
+    test('uses parsed cool target operation mode for summer mode', () => {
+        const device = createMockDevice({
+            accessoryState: {
+                targetOperationMode: 2,
+                targetHeaterCoolerState: 1
+            }
+        });
+        const controller = new PredictiveController(device);
+
+        assert.strictEqual(controller.getSeasonMode(), SeasonMode.SUMMER);
+    });
+
+    test('uses parsed heat target operation mode for winter mode', () => {
+        const device = createMockDevice({
+            accessoryState: { targetOperationMode: 1 }
+        });
+        const controller = new PredictiveController(device);
+
+        assert.strictEqual(controller.getSeasonMode(), SeasonMode.WINTER);
     });
 });
 

@@ -86,7 +86,7 @@ class PredictiveController extends EventEmitter {
      * Get the season mode based on HomeKit HeaterCooler state
      */
     getSeasonMode() {
-        const targetState = this.device.accessoryState?.targetHeaterCoolerState;
+        const targetState = this.device.accessoryState?.targetOperationMode;
 
         if (targetState === HeaterCoolerState.HEAT) {
             return SeasonMode.WINTER;

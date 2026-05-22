@@ -34,6 +34,19 @@ export class HeaterCoolerService {
         };
     }
 
+    _resolveOperationMode(targetState) {
+        const d = this.device;
+        const currentMode = d.accessoryState.operationMode;
+        const supportsDry = d.deviceData.Device.ModelSupportsDry ?? d.deviceData.Device.CanDry ?? false;
+
+        switch (targetState) {
+            case 0: return [currentMode, 8, supportsDry ? 2 : 8, 7][d.autoDryFanMode] ?? 8;
+            case 1: return [currentMode, 1, supportsDry ? 2 : 1, 7][d.heatDryFanMode] ?? 1;
+            case 2: return [currentMode, 3, supportsDry ? 2 : 3, 7][d.coolDryFanMode] ?? 3;
+            default: return currentMode;
+        }
+    }
+
     create(accessory, serviceName, deviceId) {
         const d = this.device;
         const Service = d.Service;
@@ -72,11 +85,7 @@ export class HeaterCoolerService {
             .onGet(async () => d.accessoryState.targetOperationMode)
             .onSet(async (value) => {
                 try {
-                    switch (value) {
-                        case 0: value = d.autoDryFanMode; break;
-                        case 1: value = d.heatDryFanMode; break;
-                        case 2: value = d.coolDryFanMode; break;
-                    }
+                    value = this._resolveOperationMode(value);
                     d.deviceData.Device.OperationMode = value;
                     if (d.logInfo) d.emit('info', `Set operation mode: ${AirConditioner.OperationModeMapEnumToString[value]}`);
                     await d.melCloudAta.send(d.accountType, d.displayType, d.deviceData, AirConditioner.EffectiveFlags.OperationMode);

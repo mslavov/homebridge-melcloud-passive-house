@@ -38,6 +38,7 @@ class DeviceAta extends EventEmitter {
         this.deviceId = device.id;
         this.deviceName = device.name;
         this.deviceTypeString = DeviceType[device.type];
+        this.displayType = device.displayType;
         this.heatDryFanMode = device.heatDryFanMode || 1;
         this.coolDryFanMode = device.coolDryFanMode || 1;
         this.autoDryFanMode = device.autoDryFanMode || 1;
